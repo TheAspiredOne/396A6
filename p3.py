@@ -75,42 +75,45 @@ def perform_action(action, board, size, colours):
 
 	tiles_removed = [action] # stores list of tiles that will be removed
 	neighbours_seen = set() #used to check if weve already been to a particular node
-	colour = board[action]
+	colour = board[action] 
 
 	neighbours = get_neighbours(action[0], action[1], size) #gets initial neighbours
 	neighbours_seen.add(action) #adds starting node to seen
 
 
 	def perform_DFS(a, size, board, tiles_removed, neighbours_seen):
+		'''
+		we use DFS in order to get a group of tiles of the same color
+		'''
 		neighbours = get_neighbours(a[0], a[1], size)
 		for i in neighbours:
 			if i not in neighbours_seen:
 				x,y = i
-				if board[x][y] == board[a[0]][a[1]]:
+				if board[x][y] == board[a[0]][a[1]]: #colours the same! add to tiles_removed and add to seen
 					tiles_removed.append(i)
 					neighbours_seen.add(i)
-					tiles_removed, neighbours_seen = perform_DFS(i, size, board, tiles_removed, neighbours_seen)
+					tiles_removed, neighbours_seen = perform_DFS(i, size, board, tiles_removed, neighbours_seen) #recursively call DFS
 		return tiles_removed, neighbours_seen
 
 
 	for i in neighbours:
-		if i not in neighbours_seen:
-			x,y = i
-			if board[x][y] == colour:
-				tiles_removed.append(i)
+		if i not in neighbours_seen: #if we haven't checked this tile yet,
+			x,y = i 
+			if board[x][y] == colour: #it is the same colour as the selected action
+				tiles_removed.append(i) #append its coordinates to the tiles_removed list
 				neighbours_seen.add(i)
-				tiles_removed, neighbours_seen = perform_DFS(i, size, board, tiles_removed, neighbours_seen)
+				tiles_removed, neighbours_seen = perform_DFS(i, size, board, tiles_removed, neighbours_seen) #look for any more 'connected' tiles, that is tiles of the sae colour as action
 			else:
-				neighbours_seen.add(i)
+				neighbours_seen.add(i) #not the same colour, but add to seen so we don't ever come back
 
 
 
 	#perform removal
 	board_copy = copy.deepcopy(board)
-	x_dimens = set()
+	x_dimens = set() #this set will allow us to keep track of where 'gravity' has to bring tiles down
 	for i in tiles_removed:
-		board_copy[i[0]][i[1]] = 0.0
-		x_dimens.add(i[1])
+		board_copy[i[0]][i[1]] = 0.0 #remove tiles
+		x_dimens.add(i[1]) 
 
 	# gravity acts on the tiles above the now-removed-tiles
 	for j in x_dimens:
@@ -131,16 +134,14 @@ def perform_action(action, board, size, colours):
 			gen_new_col_flag = True 
 			for q in range(j,0,-1): # for the newly found empty column, and everything to its left:
 				for i in range(size): #for every row in this col
-					# if (q-1) >=0: #ensure
 					board_copy[i][q] = board_copy[i][q-1] #copy over cols
-	if gen_new_col_flag == True:
+	if gen_new_col_flag == True: #we moved everything over by one. Now must gen new left-most col
 		colour_list = np.arange(1, colours+1)
 		for i in range(size):
 			board_copy[i][0] = float(world_rng.randint(1,colours+1))
 
-	score = len(tiles_removed) **2
-	# print(tiles_removed)
-	# print('\n' ,board_copy, '\n\n\n')
+	score = len(tiles_removed) **2 #aparently this appears to be how score is calculated
+
 	return board_copy, score
 
 
@@ -214,22 +215,17 @@ def play_game(size, colours, minballs, MC_runs):
 		else:
 			for i in range(MC_runs):
 				pass
-		# print('init\n',board_copy)
-		res_board, a_score = perform_action(action, board_copy, size, colours) #perform action
+
+
+		res_board, a_score = perform_action(action, board_copy, size, colours) #perform action. res_board is new board configuration after playing action, a_score is the score of that action
 		score.append(a_score)
 		board_copy = copy.deepcopy(res_board) #copy the new board and update board_copy
 		history.append(board_copy) #add to history
-		legal_moves = get_legal_moves(board_copy, size)
-
-
-		# print(action,'\n' ,res_board, '\n\n\n')
+		legal_moves = get_legal_moves(board_copy, size) #update available legal moves
 		
 
-	# print(len(history))
-	# for i in history:
-	# 	print(i, '\n')
-	# print(legal_moves)
-	action_list.append(None)
+	
+	action_list.append(None) #appending None to action_list so that it's length is the same as score and history
 
 	return history, action_list, score
 
@@ -395,17 +391,20 @@ if __name__ == '__main__':
 	move_rng, world_rng = init_random_num_gen(seed) # set up random num gen
 	
 
-	#play n games
-	master_history = list()
+	#these master_* lists will keep track of our game history
+	master_history = list() 
 	master_scores = list()
 	master_actions = list()
-	for i in range(n):
-		history, action, score = play_game(size, colours, minballs, MC_runs)
-		master_history.append(history)
-		master_scores.append(score)
-		master_actions.append(action)
 
-	output(master_history, master_actions, master_scores, out, size)
+
+	#play n games
+	for i in range(n):
+		history, action, score = play_game(size, colours, minballs, MC_runs) #history,action and score are lists containing the board transitions, actions taken at each step, and score of each action as 3 lists
+		master_history.append(history) # master_history[i][j] returns the jth board configuration of the ith game
+		master_scores.append(score) # master_scores[i][j] returns the jth score resulting from the action taken at the jth timestep of the ith game
+		master_actions.append(action) # master_actions[i][j] returns the jth action taken at the jth timestep in the ith game
+
+	output(master_history, master_actions, master_scores, out, size) #replay!
 
 
 
