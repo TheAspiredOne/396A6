@@ -161,6 +161,40 @@ def get_neighbours(i,j,size):
 
 
 
+def get_legal_moves_MCTS(board, size):
+	'''
+	modified get_legal_moves to remove redundant move considerations. supposed 2 tiles of same colour next to each other. 
+	Choosing one tile over the other is redundant because the score is the same. Both tiles should be considered as 1 action, not 2
+	'''
+	been_there = set()
+	legal_moves = list()
+
+	for i in range(size): # these 2 for loops will iterate through every tile on the board
+		for j in range(size):
+
+			if (i,j) not in been_there: #check if each tile has already been 'seen'
+				been_there.add((i,j))
+				if board[i][j] == 0.0: #if empty
+					continue
+				neighbours = get_neighbours(i, j, size)
+				for z in neighbours:
+					x,y = z
+					if board[i][j]==board[x][y]:
+						legal_moves.append((i,j))
+						if board[x][y] not in been_there:
+							been_there.add((x,y))
+							legal_moves.append((x,y))
+
+
+	for i in legal_moves:
+		pass
+
+
+	return legal_moves
+
+
+
+
 def get_legal_moves(board, size):
 	"""
 	get list of legal moves
@@ -258,7 +292,7 @@ def play_game(size, colours, minballs, MC_runs):
 			action_list.append(action)
 		else:
 			action = perform_MCTS(legal_moves, MC_runs, board_copy, size, colours)
-
+			action_list.append(action)
 
 		res_board, a_score = perform_action(action, board_copy, size, colours) #perform action. res_board is new board configuration after playing action, a_score is the score of that action
 		score.append(a_score)
@@ -398,7 +432,7 @@ def output(board_sequence, action_sequence, score_sequence, output_options, size
 		#TODO color stuff
 		pass
 
-	return
+	return ' not implemented. be kind. This assg was meatier than usual!'
 
 
 
