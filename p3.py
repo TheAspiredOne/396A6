@@ -188,6 +188,50 @@ def get_legal_moves(board, size):
 
 
 
+def perform_MCTS(legal_moves, MC_runs, board, size, colours):
+	'''
+	perform MC_runs
+	'''
+	global move_rng, world_rng
+
+	history = list()
+	score = [0]
+	action = None
+	board_copy = copy.deepcopy(board)
+	init_board_copy = copy.deepcopy(board)
+	avg_score_list = np.zeros(len(legal_moves)) #used to store the calc avg values
+
+
+	MC_legal_moves = None #this will be used in selecting legal moves for our MCTS implementation. 
+
+
+	for i in range(len(legal_moves)): # we are going to iterate through all considered actions
+		for j in range(MC_runs): #perform MC_runs runs
+			considered_move = legal_moves[i] 
+			res_board, a_score = perform_action(considered_move, init_board_copy, size, colours) #noticce we use init_board_copy which will always be the same init starting pos
+			avg_score_list[i] += a_score #add to total score following this ith considered action
+			board_copy = copy.deepcopy(res_board) 
+			MC_legal_moves = get_legal_moves(board_copy, size) #update the MC_legal moves
+
+			while MC_legal_moves: #random rollout policy
+				action = move_rng.randint(len(MC_legal_moves))
+				action = MC_legal_moves[action]
+
+				res_board, a_score = perform_action(action, board_copy, size, colours)
+				avg_score_list[i] += a_score
+				board_copy = copy.deepcopy(res_board)
+				MC_legal_moves = get_legal_moves(board_copy, size)
+
+	avg_score_list = avg_score_list/float(MC_runs) #avg up our scores
+	action_index = np.argmax(avg_score_list) # argmax to find the index giving the max score
+	action = legal_moves[action_index] #get the actual action
+
+	return action
+
+
+
+
+
 def play_game(size, colours, minballs, MC_runs):
 	'''
 	function that plays the game
@@ -213,8 +257,7 @@ def play_game(size, colours, minballs, MC_runs):
 			action = legal_moves[action]
 			action_list.append(action)
 		else:
-			for i in range(MC_runs):
-				pass
+			action = perform_MCTS(legal_moves, MC_runs, board_copy, size, colours)
 
 
 		res_board, a_score = perform_action(action, board_copy, size, colours) #perform action. res_board is new board configuration after playing action, a_score is the score of that action
