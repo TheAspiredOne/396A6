@@ -1,8 +1,9 @@
 #Avery Tan(altan:1392212), Canopus Tong(canopus:1412275)
-
+#cite: https://pypi.python.org/pypi/colorama#downloads
 
 from __future__ import print_function
 import sys
+import os
 import numpy as np
 import time
 import copy
@@ -484,14 +485,14 @@ def output(board_sequence, action_sequence, score_sequence, output_options, size
 
 	elif output_options > 0:
 		#TODO color stuff
-		colour_dict = { 0.0: Fore.RESET+'--'+Fore.RESET, 1.0: Fore.RED+'##'+Fore.RESET, 2.0: Fore.BLUE+'oo'+Fore.RESET, 3.0: Fore.YELLOW+'++'+Fore.RESET, 4.0: Fore.CYAN+'$$'+Fore.RESET, 5.0: Fore.MAGENTA+'xx'+Fore.RESET, 6.0: Fore.GREEN+'&&'+Fore.RESET }
+		colour_dict = { 0.0: Fore.BLACK+u"\u2588"+u"\u2588"+Fore.RESET, 1.0: Fore.RED+u"\u2588"+u"\u2588"+Fore.RESET, 2.0: Fore.BLUE+u"\u2588"+u"\u2588"+Fore.RESET, 3.0: Fore.YELLOW+u"\u2588"+u"\u2588"+Fore.RESET, 4.0: Fore.CYAN+u"\u2588"+u"\u2588"+Fore.RESET, 5.0: Fore.MAGENTA+u"\u2588"+u"\u2588"+Fore.RESET, 6.0: Fore.GREEN+u"\u2588"+u"\u2588"+Fore.RESET }
 		x_label = '  '
 		for i in range(size):
 			x_label+= str(i)+' '
 
 
 		#converting our representation into the one specified by the assg specs
-		for i in range(len(board_sequence)): #for each game
+		for i in range(len(board_sequence)): #for each game			
 			game_num = i+1 #game number starts at 0. is 0-index. so add 1
 			tot_moves = len(action_sequence[i])-1 #play_game() added an extra 'None' to the action_sequence list to prevent going out of index range
 			master_moves+=tot_moves #add to the TOTAL TOTAL moves over all games
@@ -504,6 +505,8 @@ def output(board_sequence, action_sequence, score_sequence, output_options, size
 			curr_score = 0 #curr score is the current score of a particular timestep
 
 			for j in range(len(board_sequence[i])): #for each timestep in the ith game
+				time.sleep(output_options/1000)
+				os.system('cls' if os.name == 'nt' else 'clear')				
 				curr_score+=score_sequence[i][j] #update curr score of this timestep. score_sequence[i][0] = 0
 
 				for k in range(len(board_sequence[i][j])): #for each row of our board in the curr timestep. Used to translate to assg specs
@@ -542,7 +545,7 @@ def output(board_sequence, action_sequence, score_sequence, output_options, size
 
 
 
-			print('game', i+1, 'moves:', tot_moves, avg_moves, '(', std_dev_moves, ')', 'score:', tot_score, avg_score, '(', std_dev_scores,')')
+			print('game', i+1, 'moves:', tot_moves, avg_moves, '(', std_dev_moves, ')', 'score:', tot_score, avg_score, '(', std_dev_scores,')', end="")
 	return #' not implemented. be kind. This assg was meatier than usual!'
 
 
