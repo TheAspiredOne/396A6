@@ -1,17 +1,40 @@
 #Avery Tan(altan:1392212), Canopus Tong(canopus:1412275)
+
+
+
+
+
+
 #cite: https://pypi.python.org/pypi/colorama#downloads
 
-from __future__ import print_function
+
+
+#############################################################
+##########          INTRUCTIONS FOR USE           ###########
+#############################################################
+#  colorama library req. If not installed. Install colorama
+#  'coloured' output has been disabled by default in order to prevent runtime
+#  errors if the colorama module is not installed. To enable it. Uncomment lines
+#      * 21
+#      * 27-31
+#      * 496-553
+#
+#  run python3 p3.py [argv1=out] [argv2=seed] [argv3=n] [argv4=size] [argv5=colours] [argv6=minballs] [argv7=MC_runs]
+#  
+
+
+
+# from __future__ import print_function
 import sys
 import os
 import numpy as np
 import time
 import copy
-from os.path import normpath, dirname, join
-local_colorama_module = normpath(join(dirname(__file__), '..'))
-sys.path.insert(0, local_colorama_module)
-from colorama import init, Fore, Back, Style
-init()
+# from os.path import normpath, dirname, join
+# local_colorama_module = normpath(join(dirname(__file__), '..'))
+# sys.path.insert(0, local_colorama_module)
+# from colorama import init, Fore, Back, Style
+# init()
 
 
 
@@ -89,8 +112,6 @@ def gen_new_col(board, minballs, colours, size):
 	return board
 
 
-
-
 def shift(board_copy, size, minballs, colours):
 	#check for empty columns and move stuff over by one if there is
 
@@ -98,7 +119,6 @@ def shift(board_copy, size, minballs, colours):
 
 	exit_condition = True
 	while exit_condition==True: #only exit this while loop is no more cols need to be shifted 
-		# print(board_copy,'before\n')
 		gen_new_col_flag = False #used to signal new col required
 		for j in range(size-1, -1, -1): #iterate from the right towards the left
 			if board_copy[size-1][j] == 0.0: #empty column found
@@ -112,7 +132,6 @@ def shift(board_copy, size, minballs, colours):
 		
 		if gen_new_col_flag == False: #no empty cols detected, we can exit
 			exit_condition = False
-		# print(board_copy ,'after\n\n')
 	return board_copy
 
 
@@ -238,8 +257,6 @@ def get_legal_moves(board, size):
 				if len(legal_blocks_list) > 1: #there are at least 2 adj tiles of same colour
 					master_block_list.append(legal_blocks_list) #master is now list of lists that are greater than size 1.
 
-
-	# print(master_block_list, '\n', board, '\n\n')
 	legal_moves = list()
 	for i in range(len(master_block_list)):
 		legal_moves.append(master_block_list[i][0])
@@ -293,7 +310,6 @@ def perform_MCTS(legal_moves, MC_runs, board, size, colours):
 
 	MC_legal_moves = None #this will be used in selecting legal moves for our MCTS implementation. 
 
-	# print(len(legal_moves), MC_runs)
 	for i in range(len(legal_moves)): # we are going to iterate through all considered actions
 		for j in range(MC_runs): #perform MC_runs runs
 			considered_move = legal_moves[i] 
@@ -301,7 +317,6 @@ def perform_MCTS(legal_moves, MC_runs, board, size, colours):
 			avg_score_list[i] += a_score #add to total score following this ith considered action
 			board_copy = copy.deepcopy(res_board) 
 			MC_legal_moves = get_legal_moves(board_copy, size) #update the MC_legal moves
-
 			while MC_legal_moves: #random rollout policy
 				action = move_rng.randint(len(MC_legal_moves))
 				action = MC_legal_moves[action]
@@ -353,7 +368,6 @@ def play_game(size, colours, minballs, MC_runs):
 		board_copy = copy.deepcopy(res_board) #copy the new board and update board_copy
 		history.append(board_copy) #add to history
 		legal_moves = get_legal_moves(board_copy, size) #update available legal moves
-		# print(res_board, action,'\n')
 		
 
 	
@@ -439,8 +453,6 @@ def output(board_sequence, action_sequence, score_sequence, output_options, size
 
 
 
-				# print(game_num, j, '\n')
-			# print(i,'\n')		
 	
 
 	elif output_options == 0:
@@ -484,69 +496,69 @@ def output(board_sequence, action_sequence, score_sequence, output_options, size
 
 
 	elif output_options > 0:
-		#TODO color stuff
+
+
 		colour_dict = { 0.0: Fore.BLACK+u"\u2588"+u"\u2588"+Fore.RESET, 1.0: Fore.RED+u"\u2588"+u"\u2588"+Fore.RESET, 2.0: Fore.BLUE+u"\u2588"+u"\u2588"+Fore.RESET, 3.0: Fore.YELLOW+u"\u2588"+u"\u2588"+Fore.RESET, 4.0: Fore.CYAN+u"\u2588"+u"\u2588"+Fore.RESET, 5.0: Fore.MAGENTA+u"\u2588"+u"\u2588"+Fore.RESET, 6.0: Fore.GREEN+u"\u2588"+u"\u2588"+Fore.RESET }
-		x_label = '  '
-		for i in range(size):
-			x_label+= str(i)+' '
+		# x_label = '  '
+		# for i in range(size):
+		# 	x_label+= str(i)+' '
 
 
-		#converting our representation into the one specified by the assg specs
-		for i in range(len(board_sequence)): #for each game			
-			game_num = i+1 #game number starts at 0. is 0-index. so add 1
-			tot_moves = len(action_sequence[i])-1 #play_game() added an extra 'None' to the action_sequence list to prevent going out of index range
-			master_moves+=tot_moves #add to the TOTAL TOTAL moves over all games
-			moves_inper_game.append(tot_moves) #add to this list which will be used to calc std_dev
-			tot_score = 0 #tot score for only this game
-			for uber in score_sequence[i]: #running out of variables
-				tot_score+=uber #calculate total score for this game
-			master_score+=tot_score #add to the TOTAL score over all games
-			score_inper_game.append(tot_score) #add to this list which will be used to calc std_dev
-			curr_score = 0 #curr score is the current score of a particular timestep
+		# #converting our representation into the one specified by the assg specs
+		# for i in range(len(board_sequence)): #for each game			
+		# 	game_num = i+1 #game number starts at 0. is 0-index. so add 1
+		# 	tot_moves = len(action_sequence[i])-1 #play_game() added an extra 'None' to the action_sequence list to prevent going out of index range
+		# 	master_moves+=tot_moves #add to the TOTAL TOTAL moves over all games
+		# 	moves_inper_game.append(tot_moves) #add to this list which will be used to calc std_dev
+		# 	tot_score = 0 #tot score for only this game
+		# 	for uber in score_sequence[i]: #running out of variables
+		# 		tot_score+=uber #calculate total score for this game
+		# 	master_score+=tot_score #add to the TOTAL score over all games
+		# 	score_inper_game.append(tot_score) #add to this list which will be used to calc std_dev
+		# 	curr_score = 0 #curr score is the current score of a particular timestep
 
-			for j in range(len(board_sequence[i])): #for each timestep in the ith game
-				time.sleep(output_options/1000)
-				os.system('cls' if os.name == 'nt' else 'clear')				
-				curr_score+=score_sequence[i][j] #update curr score of this timestep. score_sequence[i][0] = 0
+		# 	for j in range(len(board_sequence[i])): #for each timestep in the ith game
+		# 		time.sleep(output_options/1000)
+		# 		os.system('cls' if os.name == 'nt' else 'clear')				
+		# 		curr_score+=score_sequence[i][j] #update curr score of this timestep. score_sequence[i][0] = 0
 
-				for k in range(len(board_sequence[i][j])): #for each row of our board in the curr timestep. Used to translate to assg specs
+		# 		for k in range(len(board_sequence[i][j])): #for each row of our board in the curr timestep. Used to translate to assg specs
 
-					res=str((size-1)-k)+'|' #(0,0) was the top left corner in our representation. It is not in the assg spec. Hence, convert
-					for l in board_sequence[i][j][k]: #change colour repr from 1-6 to values in colour_dict. Change empty repr from 0.0 to '--'
-						res+= colour_dict[l]
-					res+='|'
-					print(res)
-				print(x_label) # bottom x axis labels
+		# 			res=str((size-1)-k)+'|' #(0,0) was the top left corner in our representation. It is not in the assg spec. Hence, convert
+		# 			for l in board_sequence[i][j][k]: #change colour repr from 1-6 to values in colour_dict. Change empty repr from 0.0 to '--'
+		# 				res+= colour_dict[l]
+		# 			res+='|'
+		# 			print(res)
+		# 		print(x_label) # bottom x axis labels
 
-				move = action_sequence[i][j]
-				if move != None: #don't print out action_sequence[i][-1]
-					move_x = str(move[1])
-					move_y = str((size-1) - int(move[0]))
-					print('move:', move_x, move_y)
+		# 		move = action_sequence[i][j]
+		# 		if move != None: #don't print out action_sequence[i][-1]
+		# 			move_x = str(move[1])
+		# 			move_y = str((size-1) - int(move[0]))
+		# 			print('move:', move_x, move_y)
 
 
-					print('m_ind:', j+1, 'of', tot_moves, 'move-score:', score_sequence[i][j+1], 'score:', curr_score, 'of', tot_score)
+		# 			print('m_ind:', j+1, 'of', tot_moves, 'move-score:', score_sequence[i][j+1], 'score:', curr_score, 'of', tot_score)
 			
-			avg_moves = master_moves/(i+1) # i starts at 0, hence i+1
-			avg_score = master_score/(i+1)
+		# 	avg_moves = master_moves/(i+1) # i starts at 0, hence i+1
+		# 	avg_score = master_score/(i+1)
 
-			#calc std dev for moves
-			move_err = 0.0
-			for lud in moves_inper_game:
-				move_err += (lud - avg_moves)**2
-			std_dev_moves = (move_err/(float(len(moves_inper_game))))**(0.5)
-
-
-			#calc std dev for score
-			score_err = 0.0
-			for lud in score_inper_game:
-				score_err += (lud- avg_score)**2
-			std_dev_scores = (score_err/(float(len(score_inper_game))))**(0.5)
+		# 	#calc std dev for moves
+		# 	move_err = 0.0
+		# 	for lud in moves_inper_game:
+		# 		move_err += (lud - avg_moves)**2
+		# 	std_dev_moves = (move_err/(float(len(moves_inper_game))))**(0.5)
 
 
+		# 	#calc std dev for score
+		# 	score_err = 0.0
+		# 	for lud in score_inper_game:
+		# 		score_err += (lud- avg_score)**2
+		# 	std_dev_scores = (score_err/(float(len(score_inper_game))))**(0.5)
 
-			print('game', i+1, 'moves:', tot_moves, avg_moves, '(', std_dev_moves, ')', 'score:', tot_score, avg_score, '(', std_dev_scores,')', end="")
-	return #' not implemented. be kind. This assg was meatier than usual!'
+		# 	print('game', i+1, 'moves:', tot_moves, avg_moves, '(', std_dev_moves, ')', 'score:', tot_score, avg_score, '(', std_dev_scores,')', end="")
+
+	return 0 
 
 
 
@@ -575,7 +587,6 @@ if __name__ == '__main__':
 		minballs = int(sys.argv[6]) #min num of balls in new columns [1,size]
 		MC_runs = int(sys.argv[7]) #num MC runs per move [0,inf]
 
-		# print(out,seed,n,size,colours,minballs,MC_runs)
 		check_valid(out,seed,n,size,colours,minballs,MC_runs) # check that cmd argv are within valid ranges
 
 
