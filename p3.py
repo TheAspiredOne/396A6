@@ -1,9 +1,19 @@
 #Avery Tan(altan:1392212), Canopus Tong(canopus:1412275)
 
+
+from __future__ import print_function
 import sys
 import numpy as np
 import time
 import copy
+from os.path import normpath, dirname, join
+local_colorama_module = normpath(join(dirname(__file__), '..'))
+sys.path.insert(0, local_colorama_module)
+from colorama import init, Fore, Back, Style
+init()
+
+
+
 
 
 move_rng = None
@@ -65,7 +75,7 @@ def init_game_state(size, colours):
 
 
 def gen_new_col(board, minballs, colours, size):
-	
+
 	num_new_col = world_rng.randint(minballs,size)
 
 	counter = 0
@@ -474,9 +484,66 @@ def output(board_sequence, action_sequence, score_sequence, output_options, size
 
 	elif output_options > 0:
 		#TODO color stuff
-		pass
+		colour_dict = { 0.0: Fore.RESET+'--'+Fore.RESET, 1.0: Fore.RED+'##'+Fore.RESET, 2.0: Fore.BLUE+'oo'+Fore.RESET, 3.0: Fore.YELLOW+'++'+Fore.RESET, 4.0: Fore.CYAN+'$$'+Fore.RESET, 5.0: Fore.MAGENTA+'xx'+Fore.RESET, 6.0: Fore.GREEN+'&&'+Fore.RESET }
+		x_label = '  '
+		for i in range(size):
+			x_label+= str(i)+' '
 
-	return ' not implemented. be kind. This assg was meatier than usual!'
+
+		#converting our representation into the one specified by the assg specs
+		for i in range(len(board_sequence)): #for each game
+			game_num = i+1 #game number starts at 0. is 0-index. so add 1
+			tot_moves = len(action_sequence[i])-1 #play_game() added an extra 'None' to the action_sequence list to prevent going out of index range
+			master_moves+=tot_moves #add to the TOTAL TOTAL moves over all games
+			moves_inper_game.append(tot_moves) #add to this list which will be used to calc std_dev
+			tot_score = 0 #tot score for only this game
+			for uber in score_sequence[i]: #running out of variables
+				tot_score+=uber #calculate total score for this game
+			master_score+=tot_score #add to the TOTAL score over all games
+			score_inper_game.append(tot_score) #add to this list which will be used to calc std_dev
+			curr_score = 0 #curr score is the current score of a particular timestep
+
+			for j in range(len(board_sequence[i])): #for each timestep in the ith game
+				curr_score+=score_sequence[i][j] #update curr score of this timestep. score_sequence[i][0] = 0
+
+				for k in range(len(board_sequence[i][j])): #for each row of our board in the curr timestep. Used to translate to assg specs
+
+					res=str((size-1)-k)+'|' #(0,0) was the top left corner in our representation. It is not in the assg spec. Hence, convert
+					for l in board_sequence[i][j][k]: #change colour repr from 1-6 to values in colour_dict. Change empty repr from 0.0 to '--'
+						res+= colour_dict[l]
+					res+='|'
+					print(res)
+				print(x_label) # bottom x axis labels
+
+				move = action_sequence[i][j]
+				if move != None: #don't print out action_sequence[i][-1]
+					move_x = str(move[1])
+					move_y = str((size-1) - int(move[0]))
+					print('move:', move_x, move_y)
+
+
+					print('m_ind:', j+1, 'of', tot_moves, 'move-score:', score_sequence[i][j+1], 'score:', curr_score, 'of', tot_score)
+			
+			avg_moves = master_moves/(i+1) # i starts at 0, hence i+1
+			avg_score = master_score/(i+1)
+
+			#calc std dev for moves
+			move_err = 0.0
+			for lud in moves_inper_game:
+				move_err += (lud - avg_moves)**2
+			std_dev_moves = (move_err/(float(len(moves_inper_game))))**(0.5)
+
+
+			#calc std dev for score
+			score_err = 0.0
+			for lud in score_inper_game:
+				score_err += (lud- avg_score)**2
+			std_dev_scores = (score_err/(float(len(score_inper_game))))**(0.5)
+
+
+
+			print('game', i+1, 'moves:', tot_moves, avg_moves, '(', std_dev_moves, ')', 'score:', tot_score, avg_score, '(', std_dev_scores,')')
+	return #' not implemented. be kind. This assg was meatier than usual!'
 
 
 
