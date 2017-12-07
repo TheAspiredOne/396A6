@@ -8,7 +8,7 @@ import copy
 
 move_rng = None
 world_rng = None
-
+minballs = None
 
 
 def check_valid(out,seed,n,size,colours,minballs,MC_runs):
@@ -64,13 +64,55 @@ def init_game_state(size, colours):
 	return board
 
 
+def gen_new_col(board, minballs, colours, size):
+	
+	num_new_col = world_rng.randint(minballs,size)
+
+	counter = 0
+	for i in range(size-1,-1,-1):
+		if counter == num_new_col:
+			break
+		board[i][0] = float(world_rng.randint(1,colours+1))
+		counter +=1
+
+	return board
+
+
+
+
+def shift(board_copy, size, minballs, colours):
+	#check for empty columns and move stuff over by one if there is
+
+
+
+	exit_condition = True
+	while exit_condition==True: #only exit this while loop is no more cols need to be shifted 
+		# print(board_copy,'before\n')
+		gen_new_col_flag = False #used to signal new col required
+		for j in range(size-1, -1, -1): #iterate from the right towards the left
+			if board_copy[size-1][j] == 0.0: #empty column found
+				gen_new_col_flag = True 
+				for q in range(j,0,-1): # for the newly found empty column, and everything to its left:
+					for i in range(size): #for every row in this col
+						board_copy[i][q] = board_copy[i][q-1] #copy over cols
+				board_copy = gen_new_col(board_copy, minballs, colours, size)
+				break
+
+		
+		if gen_new_col_flag == False: #no empty cols detected, we can exit
+			exit_condition = False
+		# print(board_copy ,'after\n\n')
+	return board_copy
+
+
+
 
 def perform_action(action, board, size, colours):
 	'''
 	this is the state transition function which returns a list of all the tiles 
 	that will be removed as a result of the action
 	'''
-	global move_rng, world_rng
+	global move_rng, world_rng, minballs
 
 
 	tiles_removed = [action] # stores list of tiles that will be removed
@@ -85,6 +127,7 @@ def perform_action(action, board, size, colours):
 		'''
 		we use DFS in order to get a group of tiles of the same color
 		'''
+		global minballs
 		neighbours = get_neighbours(a[0], a[1], size)
 		for i in neighbours:
 			if i not in neighbours_seen:
@@ -125,20 +168,10 @@ def perform_action(action, board, size, colours):
 							board_copy[q][j] = board_copy[q-1][j] #move everything down by 1
 						board_copy[0][j]= 0.0 # since everything has moved down by one, the top is now empty
 
-	
 
 	#check for empty columns and move stuff over by one if there is
-	gen_new_col_flag = False #used to signal new col required
-	for j in range(size-1, -1, -1): #iterate from the right towards the left
-		if board_copy[size-1][j] == 0.0: #empty column found
-			gen_new_col_flag = True 
-			for q in range(j,0,-1): # for the newly found empty column, and everything to its left:
-				for i in range(size): #for every row in this col
-					board_copy[i][q] = board_copy[i][q-1] #copy over cols
-	if gen_new_col_flag == True: #we moved everything over by one. Now must gen new left-most col
-		colour_list = np.arange(1, colours+1)
-		for i in range(size):
-			board_copy[i][0] = float(world_rng.randint(1,colours+1))
+	board_copy = shift(board_copy, size, minballs, colours )
+
 
 	score = len(tiles_removed) **2 #aparently this appears to be how score is calculated
 
@@ -160,42 +193,52 @@ def get_neighbours(i,j,size):
 	return neighbours
 
 
-
-def get_legal_moves_MCTS(board, size):
+def get_legal_moves(board, size):
 	'''
 	modified get_legal_moves to remove redundant move considerations. supposed 2 tiles of same colour next to each other. 
 	Choosing one tile over the other is redundant because the score is the same. Both tiles should be considered as 1 action, not 2
 	'''
-	been_there = set()
-	legal_moves = list()
-
-	for i in range(size): # these 2 for loops will iterate through every tile on the board
-		for j in range(size):
-
-			if (i,j) not in been_there: #check if each tile has already been 'seen'
-				been_there.add((i,j))
-				if board[i][j] == 0.0: #if empty
+	def perform_DFS_legal(move ,board, seen, legal_blocks_list, size):
+		neighbours = get_neighbours(move[0], move[1], size)
+		for i in neighbours:
+			x,y = i #unpack the x and y coordinates
+			if i not in seen:
+				if board[x][y] == board[move[0]][move[1]]: #same colour!
+					legal_blocks_list.append((x,y)) 
+					seen.add((x,y))
+					legal_blocks_list, seen = perform_DFS_legal((x,y), board, seen, legal_blocks_list, size)
+				if board[x][y] == 0.0: #empty
+					seen.add((x,y))
 					continue
-				neighbours = get_neighbours(i, j, size)
-				for z in neighbours:
-					x,y = z
-					if board[i][j]==board[x][y]:
-						legal_moves.append((i,j))
-						if board[x][y] not in been_there:
-							been_there.add((x,y))
-							legal_moves.append((x,y))
+
+		return (legal_blocks_list, seen)
+
+	seen = set()
+	master_block_list = list() #will contain lists representing blocks of connected tiles of same colour
+	for i in range(size): #go through every tile
+		for j in range(size):
+			if board[i][j] == 0.0: #it's empty, continue, but add to seen first
+				seen.add((i,j))
+				continue
+			else:
+				seen.add((i,j))
+				legal_blocks_list = [(i,j)]#empty list used to store the coordinates of one connected tile 'section'
+				legal_blocks_list, seen = perform_DFS_legal((i,j), board, seen, legal_blocks_list, size)  #use DFS to determine connections of same coloured tiles
+				if len(legal_blocks_list) > 1: #there are at least 2 adj tiles of same colour
+					master_block_list.append(legal_blocks_list) #master is now list of lists that are greater than size 1.
 
 
-	for i in legal_moves:
-		pass
+	# print(master_block_list, '\n', board, '\n\n')
+	legal_moves = list()
+	for i in range(len(master_block_list)):
+		legal_moves.append(master_block_list[i][0])
 
 
 	return legal_moves
 
 
 
-
-def get_legal_moves(board, size):
+def get_legal_moves_obs(board, size):
 	"""
 	get list of legal moves
 	"""
@@ -228,6 +271,7 @@ def perform_MCTS(legal_moves, MC_runs, board, size, colours):
 	'''
 	global move_rng, world_rng
 
+
 	history = list()
 	score = [0]
 	action = None
@@ -238,7 +282,7 @@ def perform_MCTS(legal_moves, MC_runs, board, size, colours):
 
 	MC_legal_moves = None #this will be used in selecting legal moves for our MCTS implementation. 
 
-
+	# print(len(legal_moves), MC_runs)
 	for i in range(len(legal_moves)): # we are going to iterate through all considered actions
 		for j in range(MC_runs): #perform MC_runs runs
 			considered_move = legal_moves[i] 
@@ -261,7 +305,6 @@ def perform_MCTS(legal_moves, MC_runs, board, size, colours):
 	action = legal_moves[action_index] #get the actual action
 
 	return action
-
 
 
 
@@ -299,6 +342,7 @@ def play_game(size, colours, minballs, MC_runs):
 		board_copy = copy.deepcopy(res_board) #copy the new board and update board_copy
 		history.append(board_copy) #add to history
 		legal_moves = get_legal_moves(board_copy, size) #update available legal moves
+		# print(res_board, action,'\n')
 		
 
 	
